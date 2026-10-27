@@ -5,11 +5,13 @@ import ObscuraCore
 /// the iOS version requirement and every archived mirror for this release.
 struct VersionLinksView: View {
     let bundleID: String
+    let appName: String
     let version: String
     @State private var viewModel: VersionLinksViewModel
 
-    init(bundleID: String, version: String) {
+    init(bundleID: String, appName: String, version: String) {
         self.bundleID = bundleID
+        self.appName = appName
         self.version = version
         _viewModel = State(initialValue: VersionLinksViewModel(bundleID: bundleID, version: version))
     }
@@ -52,12 +54,12 @@ struct VersionLinksView: View {
 
                     Section {
                         ForEach(detail.links) { link in
-                            DownloadLinkRow(link: link)
+                            DownloadLinkRow(link: link, bundleID: bundleID, appName: appName, version: version)
                         }
                     } header: {
                         Text("\(detail.links.count) Mirror\(detail.links.count == 1 ? "" : "s")")
                     } footer: {
-                        Text("Files are hosted by third parties (such as archive.org), not by this app. iOS does not install .ipa files directly - use a sideloading tool you trust.")
+                        Text("Files are hosted by third parties (such as archive.org), not by this app. Downloads continue in the background and appear on the Downloads tab; iOS does not install .ipa files directly, so use a sideloading tool you trust to install one.")
                     }
                 }
                 .listStyle(.insetGrouped)

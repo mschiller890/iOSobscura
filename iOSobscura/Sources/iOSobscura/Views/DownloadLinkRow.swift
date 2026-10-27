@@ -15,14 +15,19 @@ private struct TagChip: View {
     }
 }
 
-/// One mirror from `/getAppVersionLinks/{bundleID}/{version}`. The website
-/// just links straight to the archive.org (or other) file; this keeps that
-/// exact action as the primary button and adds Share/Copy as native
-/// conveniences around the same link, not new workflows.
+/// One mirror from `/getAppVersionLinks/{bundleID}/{version}`. Where the
+/// website just links straight to the file, "Download" here starts a real,
+/// backgrounded in-app download (see `DownloadManager`) that shows up on
+/// the Downloads tab; opening the raw link in a browser and copying it are
+/// kept as secondary actions on the same URL.
 struct DownloadLinkRow: View {
     let link: DownloadLink
+    let bundleID: String
+    let appName: String
+    let version: String
 
     @Environment(\.openURL) private var openURL
+    private let manager = DownloadManager.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -57,34 +62,65 @@ struct DownloadLinkRow: View {
                 }
             }
 
-            HStack(spacing: 12) {
-                Button {
-                    openURL(link.url)
-                } label: {
-                    Label("Direct Download", systemImage: "arrow.down.circle")
-                        .font(.subheadline)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-
-                ShareLink(item: link.url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                }
-                .labelStyle(.iconOnly)
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            .padding(.top, 2)
+            actionRow
+                .padding(.top, 2)
         }
         .padding(.vertical, 6)
         .contextMenu {
+            Button {
+                openURL(link.url)
+            } label: {
+                Label("Open in Browser", systemImage: "safari")
+            }
             Button {
                 UIPasteboard.general.string = link.url.absoluteString
             } label: {
                 Label("Copy Link", systemImage: "doc.on.doc")
             }
-            ShareLink(item: link.url)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var actionRow: some View {
+        if manager.isDownloaded(link) {
+            Label("Downloaded", systemImage: "checkmark.circle.fill")
+                .font(.subheadline)
+                .foregroundStyle(.green)
+        } else if let active = manager.activeDownload(for: link) {
+            inlineProgress(active)
+        } else {
+            Button {
+                manager.start(link: link, bundleID: bundleID, appName: appName, version: version)
+            } label: {
+                Label("Download", systemImage: "arrow.down.circle")
+                    .font(.subheadline)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+        }
+    }
+
+    @ViewBuilder
+    private func inlineProgress(_ download: ActiveDownload) -> some View {
+        switch download.phase {
+        case .downloading(let written, let total):
+            HStack(spacing: 8) {
+                if let total, total > 0 {
+                    ProgressView(value: Double(written), total: Double(total))
+                        .frame(width: 90)
+                } else {
+                    ProgressView()
+                        .frame(width: 20, height: 20)
+                }
+                Text("Downloading…")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        case .failed:
+            Label("Download Failed", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
     }
 }

@@ -10,5 +10,6 @@ struct AppRoute: Hashable {
 
 struct VersionRoute: Hashable {
     let bundleID: String
+    let appName: String
     let version: String
 }

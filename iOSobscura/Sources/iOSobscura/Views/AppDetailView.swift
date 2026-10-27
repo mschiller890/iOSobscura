@@ -57,7 +57,7 @@ struct AppDetailView: View {
                 } else {
                     Section("\(detail.versions.count) Version\(detail.versions.count == 1 ? "" : "s")") {
                         ForEach(detail.versions) { version in
-                            NavigationLink(value: VersionRoute(bundleID: bundleID, version: version.version)) {
+                            NavigationLink(value: VersionRoute(bundleID: bundleID, appName: detail.name, version: version.version)) {
                                 Text(version.version)
                             }
                         }

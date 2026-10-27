@@ -21,7 +21,7 @@ struct HomeView: View {
                     AppDetailView(bundleID: route.bundleID)
                 }
                 .navigationDestination(for: VersionRoute.self) { route in
-                    VersionLinksView(bundleID: route.bundleID, version: route.version)
+                    VersionLinksView(bundleID: route.bundleID, appName: route.appName, version: route.version)
                 }
         }
     }

@@ -39,6 +39,7 @@ iOSobscura/
 ├── xtool.yml, Info.plist          bundle config, app icon wiring
 ├── Resources/                     app icon source + make-icons.py generator
 ├── Sources/iOSobscura/            SwiftUI views and @Observable view models
+│   └── Downloads/                 DownloadManager (background URLSession) + the Downloads tab
 └── Packages/ObscuraCore/          a SEPARATE local SwiftPM package (see below)
     ├── Sources/ObscuraCore/       models, endpoints, HTML parser, networking - Foundation only
     ├── Sources/ObscuraCoreSelfTest/   plain-executable sanity check (see Testing)
@@ -61,12 +62,28 @@ Everything that fetches or parses a page lives in `ObscuraCore`:
 - `ObscuraClient` - an `actor` that fetches a route and hands its HTML to the parser
 - `Models.swift` - `ObscuraApp`, `AppDetail`, `DownloadLink`, `VersionDetail`, `ServerStats`
 
-The app target (`Sources/iOSobscura`) is SwiftUI only: a `TabView` with three tabs (Browse,
-Stats, About), each a `NavigationStack`, each screen backed by a small `@Observable` view
-model that holds a `LoadState<T>` (`idle` / `loading` / `loaded` / `failed`) and nothing
-else. Navigation uses typed route values (`AppRoute`, `VersionRoute` in `Routes.swift`)
-rather than raw strings, specifically so a bundle ID and a version number - both plain
-strings - can never be confused by `navigationDestination(for:)`.
+The app target (`Sources/iOSobscura`) is SwiftUI only: a `TabView` with four tabs (Browse,
+Downloads, Stats, About), each a `NavigationStack`, each content screen backed by a small
+`@Observable` view model that holds a `LoadState<T>` (`idle` / `loading` / `loaded` /
+`failed`) and nothing else. Navigation uses typed route values (`AppRoute`, `VersionRoute`
+in `Routes.swift`) rather than raw strings, specifically so a bundle ID and a version
+number - both plain strings - can never be confused by `navigationDestination(for:)`.
+
+**Downloads** (`Sources/iOSobscura/Downloads/`) has no equivalent on the website at all -
+the site only ever links straight to a mirror's URL. `DownloadLinkRow`'s "Download" button
+starts a real download through `DownloadManager`, which uses a **background**
+`URLSession` (identifier `com.mschiller890.iosobscura.downloads`) so it keeps running while
+the app is suspended. The one thing that makes that actually survive a relaunch: the
+session is recreated with the same identifier *eagerly*, from `AppDelegate.didFinishLaunching`
+(not lazily from whichever view happens to ask for it first), which is what makes iOS hand
+back the same `URLSessionTask` for anything still in flight - and since nothing else
+survives a relaunch, every fact needed to rebuild that download's row (app name, version,
+mirror label, final filename) is stashed as JSON on the task's own `taskDescription` when
+it starts. Finished files land in `Documents/Downloads/`, exposed to the Files app via
+`UIFileSharingEnabled`/`LSSupportsOpeningDocumentsInPlace` in `Info.plist` so a sideloading
+tool can reach them through Share or "Open In," and their metadata (not the bytes) is
+mirrored to a small JSON index in Application Support so the Downloads tab survives a
+relaunch too.
 
 ## Environment this was built and verified on
 
@@ -182,7 +199,8 @@ installed, launched, or looked at on a screen.
 | Search | Yes, as native `.searchable` (debounced) instead of a separate page | `HomeView` | Parser: yes. Screen: build-verified only |
 | App detail: name, developer, version list | Yes | `AppDetailView` | Parser: yes. Screen: build-verified only |
 | Version detail: iOS requirement, mirrors, sizes, architecture tags | Yes | `VersionLinksView` / `DownloadLinkRow` | Parser: yes. Screen: build-verified only |
-| Direct download link | Yes, opens in default browser; added Share/Copy Link as native conveniences on the same link | `DownloadLinkRow` | Build-verified only |
+| Direct download link | Yes - starts a real, backgrounded in-app download instead of opening a browser; "Open in Browser" and "Copy Link" are kept as secondary actions on the same URL | `DownloadLinkRow` / `DownloadManager` | Build-verified only |
+| Downloads tab (Downloading + Downloaded sections) | **Native-only addition, no website equivalent** - the site never does more than link to a mirror | `DownloadsView` | Build-verified only |
 | Icon with `onerror` proxy fallback | Yes, same two-step fallback, plus in-memory caching | `ObscuraIconView` | Build-verified only |
 | `/stats` page | Yes | `StatsView` (Stats tab) | Parser: yes. Screen: build-verified only |
 | GitHub / Donate footer links | Yes, as its own tab rather than a page footer | `AboutView` | Build-verified only |
@@ -210,6 +228,14 @@ installed, launched, or looked at on a screen.
   future label doesn't match the expected shape.
 - **Stats screen device fields are the server's own computation** for whatever request the
   app happens to send - not spoofed, not reinterpreted locally.
+- **The background-download machinery is reasoned, not checked.** `DownloadManager`'s
+  reattachment-after-relaunch logic, the `taskDescription`-as-storage trick, and the
+  `handleEventsForBackgroundURLSession` wake-up path are all standard, documented
+  `URLSession` behavior - but with no simulator or device available this session, none of
+  it has actually been exercised: no download has run, finished, failed, been retried, or
+  survived an app relaunch for real. The same is true of the Files app integration
+  (`UIFileSharingEnabled`/`LSSupportsOpeningDocumentsInPlace`) - it builds, it has not been
+  looked at on a device.
 
 ## Regenerating the app icon
 

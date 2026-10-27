@@ -20,6 +20,18 @@
 	<string>1</string>
 
 	<!--
+	  Downloaded .ipa mirrors are saved to Documents/Downloads (see
+	  DownloadManager). These two keys put that folder in the Files app, on
+	  its own or through "On My iPhone" - without them a downloaded file is
+	  reachable only via Share/ShareLink from inside this app, with no way
+	  for another app (a sideloading tool, say) to browse to it directly.
+	-->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+
+	<!--
 	  The app icon. iOS 11+ ignores the legacy CFBundleIconFile key that
 	  xtool.yml's iconPath: sets, and reads this instead. CFBundleIconFiles
 	  lists base names without the extension; every file here is copied
