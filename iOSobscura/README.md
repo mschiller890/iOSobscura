@@ -85,6 +85,14 @@ tool can reach them through Share or "Open In," and their metadata (not the byte
 mirrored to a small JSON index in Application Support so the Downloads tab survives a
 relaunch too.
 
+Two things on top of that: **transfer speed** (`ActiveDownload.updateProgress` samples
+bytes/time at most 5x/second and blends it with a simple exponential moving average, shown
+as e.g. "3.1 MB/s" wherever progress appears) and a **local notification** when a download
+finishes or fails (`DownloadNotifications`), since the whole point of backgrounding a
+download is that the user doesn't have to keep the Downloads tab open and watch it finish.
+Permission for that is requested in context - the first time a download is started, not
+unconditionally at launch.
+
 ## Environment this was built and verified on
 
 - **Fedora Linux 44**, no Mac, no iOS Simulator (SwiftUI does not exist on Linux at all).

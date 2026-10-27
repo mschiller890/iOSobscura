@@ -113,10 +113,14 @@ struct DownloadLinkRow: View {
                     ProgressView()
                         .frame(width: 20, height: 20)
                 }
-                Text("Downloading…")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if let speed = download.bytesPerSecond, speed > 0 {
+                    Text("Downloading… \(formattedTransferRate(speed))")
+                } else {
+                    Text("Downloading…")
+                }
             }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         case .failed:
             Label("Download Failed", systemImage: "exclamationmark.triangle.fill")
                 .font(.caption)

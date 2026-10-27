@@ -67,15 +67,22 @@ private struct ActiveDownloadRow: View {
             case .downloading(let written, let total):
                 if let total, total > 0 {
                     ProgressView(value: Double(written), total: Double(total))
-                    Text("\(bytes(written)) of \(bytes(total))")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
                 } else {
                     ProgressView()
-                    Text(bytes(written))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
                 }
+                HStack {
+                    if let total, total > 0 {
+                        Text("\(bytes(written)) of \(bytes(total))")
+                    } else {
+                        Text(bytes(written))
+                    }
+                    Spacer()
+                    if let speed = download.bytesPerSecond, speed > 0 {
+                        Text(formattedTransferRate(speed))
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
                 Button("Cancel", role: .destructive) { manager.cancel(download) }
                     .font(.caption)
 

@@ -106,6 +106,7 @@ final class DownloadManager: NSObject {
 
     func start(link: DownloadLink, bundleID: String, appName: String, version: String) {
         guard activeDownload(for: link) == nil, !isDownloaded(link) else { return }
+        DownloadNotifications.requestAuthorizationIfNeeded()
         let info = PendingDownloadInfo(
             bundleID: bundleID,
             appName: appName,
@@ -170,6 +171,7 @@ final class DownloadManager: NSObject {
     fileprivate func markFailed(taskID: Int, message: String, resumeData: Data?) {
         guard let download = activeDownloads.first(where: { $0.id == taskID }) else { return }
         download.phase = .failed(message: message, resumeData: resumeData)
+        DownloadNotifications.notifyFailed(appName: download.appName, version: download.version, message: message)
     }
 
     @MainActor
@@ -177,6 +179,7 @@ final class DownloadManager: NSObject {
         activeDownloads.removeAll { $0.id == taskID }
         completedDownloads.insert(record, at: 0)
         saveRecords()
+        DownloadNotifications.notifyFinished(appName: record.appName, version: record.version)
     }
 
     // MARK: - Naming
@@ -242,7 +245,7 @@ extension DownloadManager: URLSessionDownloadDelegate {
         let total: Int64? = totalBytesExpectedToWrite > 0 ? totalBytesExpectedToWrite : nil
         Task { @MainActor in
             guard let download = self.activeDownloads.first(where: { $0.id == id }) else { return }
-            download.phase = .downloading(bytesWritten: totalBytesWritten, totalBytes: total)
+            download.updateProgress(bytesWritten: totalBytesWritten, totalBytes: total)
         }
     }
 

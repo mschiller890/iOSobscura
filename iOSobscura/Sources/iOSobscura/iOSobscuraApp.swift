@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import UserNotifications
 
 /// A background `URLSession` only reattaches to tasks that kept running
 /// while the app was away if it's recreated, with the same identifier,
@@ -16,6 +17,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         DownloadManager.shared.start()
+        UNUserNotificationCenter.current().delegate = self
         return true
     }
 
@@ -25,6 +27,22 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         completionHandler: @escaping () -> Void
     ) {
         DownloadManager.shared.backgroundCompletionHandler = completionHandler
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    /// Without this, a notification posted while the app is in the
+    /// foreground is silently swallowed - the default is to show nothing,
+    /// which is wrong here: being in the app at all doesn't mean the
+    /// Downloads tab is the one on screen. `nonisolated` because this
+    /// delegate protocol calls back on an arbitrary thread, and the
+    /// implementation touches no actor-isolated state anyway.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .list])
     }
 }
 

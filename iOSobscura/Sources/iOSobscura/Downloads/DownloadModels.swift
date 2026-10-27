@@ -50,6 +50,13 @@ final class ActiveDownload: Identifiable {
     let suggestedFileName: String
     var phase: Phase
 
+    /// Smoothed transfer rate, in bytes/second, while `phase` is
+    /// `.downloading`. `nil` until there have been at least two samples far
+    /// enough apart to measure - meaningless otherwise.
+    private(set) var bytesPerSecond: Double?
+    private var lastSampleTime: Date?
+    private var lastSampleBytes: Int64 = 0
+
     init(
         id: Int,
         remoteURL: URL,
@@ -69,4 +76,32 @@ final class ActiveDownload: Identifiable {
         self.suggestedFileName = suggestedFileName
         self.phase = phase
     }
+
+    /// Updates progress and re-estimates throughput. Samples are only taken
+    /// at most 5x/second (`didWriteData` fires far more often than that on
+    /// a fast connection) and blended with the previous estimate with a
+    /// simple exponential moving average, so the displayed rate doesn't
+    /// jitter between consecutive chunks of wildly different size.
+    func updateProgress(bytesWritten: Int64, totalBytes: Int64?) {
+        let now = Date()
+        if let lastSampleTime {
+            let elapsed = now.timeIntervalSince(lastSampleTime)
+            if elapsed >= 0.2 {
+                let instantaneous = Double(bytesWritten - lastSampleBytes) / elapsed
+                bytesPerSecond = bytesPerSecond.map { $0 * 0.7 + instantaneous * 0.3 } ?? instantaneous
+                self.lastSampleTime = now
+                lastSampleBytes = bytesWritten
+            }
+        } else {
+            lastSampleTime = now
+            lastSampleBytes = bytesWritten
+        }
+        phase = .downloading(bytesWritten: bytesWritten, totalBytes: totalBytes)
+    }
+}
+
+/// Formats a bytes/second figure the same way everywhere it's shown
+/// (`DownloadsView`, `DownloadLinkRow`) - e.g. "3.1 MB/s".
+func formattedTransferRate(_ bytesPerSecond: Double) -> String {
+    ByteCountFormatter.string(fromByteCount: Int64(bytesPerSecond), countStyle: .file) + "/s"
 }
