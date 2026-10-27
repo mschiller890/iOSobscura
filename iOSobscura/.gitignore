@@ -1,0 +1,17 @@
+.DS_Store
+/.build
+xcuserdata/
+DerivedData/
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
+
+/xtool
+
+# xtool's default template ignores /Packages wholesale (historically where
+# SwiftPM checked out downloaded dependencies). Packages/ObscuraCore here is
+# our OWN source, not a checkout, so only its build output is ignored.
+/Packages/*/.build
+
+__pycache__/
+*.pyc

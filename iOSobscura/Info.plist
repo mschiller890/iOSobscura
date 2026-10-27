@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  xtool generates a bare Info.plist and merges the keys here over it
+	  (see xtool.yml's infoPath). Nothing in this app needs an App
+	  Transport Security exception or any runtime permission: every
+	  request this app makes - to iosapps.litten.ca, to Apple's artwork
+	  CDN, and to archive.org for a direct download - is plain HTTPS, and
+	  the app never touches the camera, location, contacts, or anything
+	  else iOS gates behind a usage-description string.
+	-->
+	<key>CFBundleDisplayName</key>
+	<string>iOS Obscura</string>
+
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+	<!--
+	  The app icon. iOS 11+ ignores the legacy CFBundleIconFile key that
+	  xtool.yml's iconPath: sets, and reads this instead. CFBundleIconFiles
+	  lists base names without the extension; every file here is copied
+	  into the bundle root by xtool.yml's resources: list, and every name
+	  here must appear there. Regenerate all of them with
+	  `python3 Resources/make-icons.py`.
+	-->
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon-20@2x</string>
+				<string>AppIcon-20@3x</string>
+				<string>AppIcon-29@2x</string>
+				<string>AppIcon-29@3x</string>
+				<string>AppIcon-40@2x</string>
+				<string>AppIcon-40@3x</string>
+				<string>AppIcon-60@2x</string>
+				<string>AppIcon-60@3x</string>
+			</array>
+		</dict>
+	</dict>
+
+	<!-- The iPad's slots are a different set: three of them are 1x. -->
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon-20@1x</string>
+				<string>AppIcon-20@2x</string>
+				<string>AppIcon-29@1x</string>
+				<string>AppIcon-29@2x</string>
+				<string>AppIcon-40@1x</string>
+				<string>AppIcon-40@2x</string>
+				<string>AppIcon-76@1x</string>
+				<string>AppIcon-76@2x</string>
+				<string>AppIcon-83.5@2x</string>
+			</array>
+		</dict>
+	</dict>
+</dict>
+</plist>
